@@ -24,6 +24,7 @@ export type FlowResult = {
   tone: "success" | "neutral" | "warning";
   multiplier?: number;
   multiplierLabel?: string;
+  calcType?: "antecipacao" | "acordo_cf";
 };
 
 export type FlowNode = FlowQuestion | FlowResult;
@@ -68,6 +69,7 @@ type NodeRow = {
   tone: Tone | null;
   multiplier: number | null;
   multiplier_label: string | null;
+  calc_type: "antecipacao" | "acordo_cf" | null;
   is_root: boolean;
 };
 
@@ -114,6 +116,7 @@ function buildNodes(
         tone: row.tone ?? "neutral",
         multiplier: row.multiplier ?? undefined,
         multiplierLabel: row.multiplier_label ?? undefined,
+        calcType: row.calc_type ?? undefined,
       };
     }
   }

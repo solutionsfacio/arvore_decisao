@@ -72,11 +72,48 @@ function buildSteps(
   return steps;
 }
 
+function CurrencyInput({
+  fieldLabel,
+  value,
+  onChange,
+  placeholder,
+}: {
+  fieldLabel?: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      {fieldLabel ? (
+        <span className="text-xs font-medium text-[var(--color-text-muted)]">
+          {fieldLabel}
+        </span>
+      ) : null}
+      <div className="flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-2 transition focus-within:border-[var(--color-facio-blue)]">
+        <span className="text-xs font-semibold text-[var(--color-text-muted)]">
+          R$
+        </span>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full bg-transparent text-sm text-[var(--color-text)] outline-none"
+        />
+      </div>
+    </div>
+  );
+}
+
 export function CollectionTree({ editing }: { editing: boolean }) {
   const flow = useFlow();
   const { nodes, rootNodeId, loading, error } = flow;
   const [path, setPath] = useState<string[]>([]);
   const [contractValue, setContractValue] = useState("");
+  const [paidValue, setPaidValue] = useState("");
+  const [openValue, setOpenValue] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -144,6 +181,10 @@ export function CollectionTree({ editing }: { editing: boolean }) {
               node={step.node}
               contractValue={contractValue}
               onContractValueChange={setContractValue}
+              paidValue={paidValue}
+              onPaidValueChange={setPaidValue}
+              openValue={openValue}
+              onOpenValueChange={setOpenValue}
             />
           ),
         )}
@@ -244,16 +285,36 @@ type ResultStepProps = {
   node: ResultNode;
   contractValue: string;
   onContractValueChange: (v: string) => void;
+  paidValue: string;
+  onPaidValueChange: (v: string) => void;
+  openValue: string;
+  onOpenValueChange: (v: string) => void;
 };
 
 function ResultStep({
   node,
   contractValue,
   onContractValueChange,
+  paidValue,
+  onPaidValueChange,
+  openValue,
+  onOpenValueChange,
 }: ResultStepProps) {
+  const isAcordoCF = node.calcType === "acordo_cf";
+
+  const numericPaid = parseBRNumber(paidValue);
+  const numericOpen = parseBRNumber(openValue);
+  const acordoComputed =
+    isAcordoCF &&
+    node.multiplier !== undefined &&
+    numericPaid !== null &&
+    numericOpen !== null
+      ? numericOpen - (numericPaid + numericOpen) * node.multiplier
+      : null;
+
   const numericValue = parseBRNumber(contractValue);
   const computed =
-    node.multiplier !== undefined && numericValue !== null
+    !isAcordoCF && node.multiplier !== undefined && numericValue !== null
       ? numericValue * node.multiplier
       : null;
 
@@ -300,29 +361,46 @@ function ResultStep({
       </div>
 
       {node.multiplier !== undefined ? (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-2 transition focus-within:border-[var(--color-facio-blue)]">
-            <span className="text-xs font-semibold text-[var(--color-text-muted)]">
-              R$
-            </span>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={contractValue}
-              onChange={(e) => onContractValueChange(e.target.value)}
-              placeholder="Valor da contratação"
-              className="w-full bg-transparent text-sm text-[var(--color-text)] outline-none"
+        isAcordoCF ? (
+          <div className="flex flex-col gap-2">
+            <CurrencyInput
+              fieldLabel="Valor pago"
+              value={paidValue}
+              onChange={onPaidValueChange}
+              placeholder="0,00"
             />
+            <CurrencyInput
+              fieldLabel="Valor em aberto"
+              value={openValue}
+              onChange={onOpenValueChange}
+              placeholder="0,00"
+            />
+            <div className="flex items-baseline justify-between gap-2 border-t border-dashed border-[var(--color-border)] pt-2">
+              <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+                Valor do acordo
+              </span>
+              <span className="font-mono text-lg font-semibold text-[var(--color-text)]">
+                {acordoComputed !== null ? brl.format(acordoComputed) : "—"}
+              </span>
+            </div>
           </div>
-          <div className="flex items-baseline justify-between gap-2 border-t border-dashed border-[var(--color-border)] pt-2">
-            <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
-              {node.multiplierLabel}
-            </span>
-            <span className="font-mono text-lg font-semibold text-[var(--color-text)]">
-              {computed !== null ? brl.format(computed) : "—"}
-            </span>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <CurrencyInput
+              value={contractValue}
+              onChange={onContractValueChange}
+              placeholder="Valor da contratação"
+            />
+            <div className="flex items-baseline justify-between gap-2 border-t border-dashed border-[var(--color-border)] pt-2">
+              <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+                {node.multiplierLabel}
+              </span>
+              <span className="font-mono text-lg font-semibold text-[var(--color-text)]">
+                {computed !== null ? brl.format(computed) : "—"}
+              </span>
+            </div>
           </div>
-        </div>
+        )
       ) : node.detail ? (
         <p className="font-mono text-xs text-[var(--color-text-muted)]">
           {node.detail}
