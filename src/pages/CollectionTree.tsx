@@ -304,12 +304,16 @@ function ResultStep({
 
   const numericPaid = parseBRNumber(paidValue);
   const numericOpen = parseBRNumber(openValue);
-  const acordoComputed =
+  const descontoAplicado =
     isAcordoCF &&
     node.multiplier !== undefined &&
     numericPaid !== null &&
     numericOpen !== null
-      ? numericOpen - (numericPaid + numericOpen) * node.multiplier
+      ? (numericPaid + numericOpen) * node.multiplier
+      : null;
+  const acordoComputed =
+    descontoAplicado !== null && numericOpen !== null
+      ? numericOpen - descontoAplicado
       : null;
 
   const numericValue = parseBRNumber(contractValue);
@@ -375,13 +379,25 @@ function ResultStep({
               onChange={onOpenValueChange}
               placeholder="0,00"
             />
-            <div className="flex items-baseline justify-between gap-2 border-t border-dashed border-[var(--color-border)] pt-2">
-              <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
-                Valor do acordo
-              </span>
-              <span className="font-mono text-lg font-semibold text-[var(--color-text)]">
-                {acordoComputed !== null ? brl.format(acordoComputed) : "—"}
-              </span>
+            <div className="flex flex-col gap-1 border-t border-dashed border-[var(--color-border)] pt-2">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+                  Desconto aplicado
+                </span>
+                <span className="font-mono text-sm font-medium text-[var(--color-text)]">
+                  {descontoAplicado !== null
+                    ? brl.format(descontoAplicado)
+                    : "—"}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+                  Valor do acordo
+                </span>
+                <span className="font-mono text-lg font-semibold text-[var(--color-text)]">
+                  {acordoComputed !== null ? brl.format(acordoComputed) : "—"}
+                </span>
+              </div>
             </div>
           </div>
         ) : (
