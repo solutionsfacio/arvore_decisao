@@ -304,8 +304,10 @@ function ResultStep({
 
   const numericPaid = parseBRNumber(paidValue);
   const numericOpen = parseBRNumber(openValue);
+  const pagoExcedeAberto =
+    numericPaid !== null && numericOpen !== null && numericPaid > numericOpen;
   const saldo =
-    numericOpen !== null && numericPaid !== null
+    numericOpen !== null && numericPaid !== null && !pagoExcedeAberto
       ? numericOpen - numericPaid
       : null;
   const descontoAplicado =
@@ -381,24 +383,35 @@ function ResultStep({
               placeholder="0,00"
             />
             <div className="flex flex-col gap-1 border-t border-dashed border-[var(--color-border)] pt-2">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
-                  Desconto aplicado
-                </span>
-                <span className="font-mono text-sm font-medium text-[var(--color-text)]">
-                  {descontoAplicado !== null
-                    ? brl.format(descontoAplicado)
-                    : "—"}
-                </span>
-              </div>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
-                  Valor do acordo
-                </span>
-                <span className="font-mono text-lg font-semibold text-[var(--color-text)]">
-                  {acordoComputed !== null ? brl.format(acordoComputed) : "—"}
-                </span>
-              </div>
+              {pagoExcedeAberto ? (
+                <p className="text-sm font-medium text-[var(--color-sun)]">
+                  Valor pago maior que o valor em aberto — não há acordo a
+                  ser feito.
+                </p>
+              ) : (
+                <>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+                      Desconto aplicado
+                    </span>
+                    <span className="font-mono text-sm font-medium text-[var(--color-text)]">
+                      {descontoAplicado !== null
+                        ? brl.format(descontoAplicado)
+                        : "—"}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+                      Valor do acordo
+                    </span>
+                    <span className="font-mono text-lg font-semibold text-[var(--color-text)]">
+                      {acordoComputed !== null
+                        ? brl.format(acordoComputed)
+                        : "—"}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         ) : (
