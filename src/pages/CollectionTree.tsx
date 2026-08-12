@@ -304,16 +304,17 @@ function ResultStep({
 
   const numericPaid = parseBRNumber(paidValue);
   const numericOpen = parseBRNumber(openValue);
+  const saldo =
+    numericOpen !== null && numericPaid !== null
+      ? numericOpen - numericPaid
+      : null;
   const descontoAplicado =
-    isAcordoCF &&
-    node.multiplier !== undefined &&
-    numericPaid !== null &&
-    numericOpen !== null
-      ? (numericPaid + numericOpen) * node.multiplier
+    isAcordoCF && node.multiplier !== undefined && saldo !== null
+      ? saldo * node.multiplier
       : null;
   const acordoComputed =
-    descontoAplicado !== null && numericOpen !== null
-      ? numericOpen - descontoAplicado
+    descontoAplicado !== null && saldo !== null
+      ? saldo - descontoAplicado
       : null;
 
   const numericValue = parseBRNumber(contractValue);
