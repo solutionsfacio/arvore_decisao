@@ -8,19 +8,16 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { FlowEditor } from "../editor/FlowEditor";
 import { useFlow, type FlowNode, type FlowOption } from "../hooks/useFlow";
+import {
+  computeAcordoCF,
+  computeSimpleDiscount,
+  parseBRNumber,
+} from "../lib/acordoCalc";
 
 const brl = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
 });
-
-function parseBRNumber(value: string): number | null {
-  if (!value.trim()) return null;
-  const cleaned = value.replace(/[^\d,.-]/g, "").replace(/\./g, "");
-  const normalized = cleaned.replace(",", ".");
-  const n = Number(normalized);
-  return Number.isFinite(n) ? n : null;
-}
 
 type QuestionNode = Extract<FlowNode, { type: "question" }>;
 type ResultNode = Extract<FlowNode, { type: "result" }>;
@@ -304,25 +301,21 @@ function ResultStep({
 
   const numericPaid = parseBRNumber(paidValue);
   const numericOpen = parseBRNumber(openValue);
-  const pagoExcedeAberto =
-    numericPaid !== null && numericOpen !== null && numericPaid > numericOpen;
-  const saldo =
-    numericOpen !== null && numericPaid !== null && !pagoExcedeAberto
-      ? numericOpen - numericPaid
+  const acordoCF =
+    isAcordoCF &&
+    node.multiplier !== undefined &&
+    numericPaid !== null &&
+    numericOpen !== null
+      ? computeAcordoCF(numericOpen, numericPaid, node.multiplier)
       : null;
-  const descontoAplicado =
-    isAcordoCF && node.multiplier !== undefined && saldo !== null
-      ? saldo * node.multiplier
-      : null;
-  const acordoComputed =
-    descontoAplicado !== null && saldo !== null
-      ? saldo - descontoAplicado
-      : null;
+  const pagoExcedeAberto = acordoCF?.pagoExcedeAberto ?? false;
+  const descontoAplicado = acordoCF?.descontoAplicado ?? null;
+  const acordoComputed = acordoCF?.acordoComputed ?? null;
 
   const numericValue = parseBRNumber(contractValue);
   const computed =
     !isAcordoCF && node.multiplier !== undefined && numericValue !== null
-      ? numericValue * node.multiplier
+      ? computeSimpleDiscount(numericValue, node.multiplier)
       : null;
 
   const accentClass =

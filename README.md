@@ -46,6 +46,10 @@ npm install
 npm run dev
 ```
 
+Antes de mexer no cálculo do acordo (`src/lib/acordoCalc.ts`), rode `npm test` — ele
+trava a regra de negócio (desconto incide sobre o valor em aberto, não sobre o saldo)
+com um caso de regressão.
+
 **Pré-requisitos:**
 - `.env` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`
 - Migrações aplicadas no Supabase Studio na ordem:
