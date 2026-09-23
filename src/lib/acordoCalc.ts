@@ -1,11 +1,13 @@
 /**
  * Cálculo de acordo com desconto (calcType "acordo_cf").
  *
- * Regra de negócio: o multiplier é uma TAXA DE DESCONTO sobre o valor total
- * em aberto original — não sobre o saldo já reduzido pelo valor pago.
- * Pagar parte da dívida não diminui o percentual de desconto concedido.
+ * Entradas: valor já pago e valor pendente (saldo devedor atual) — os dois
+ * números que o atendente tem em mãos ao falar com o cliente. O multiplier é
+ * uma TAXA DE DESCONTO sobre o valor total da dívida (pago + pendente), não
+ * apenas sobre o valor pendente — pagar parte da dívida não diminui o
+ * percentual de desconto concedido.
  *
- * valor do acordo = (valor em aberto − valor pago) − (valor em aberto × taxa de desconto)
+ * valor do acordo = valor pendente − ((valor pago + valor pendente) × taxa de desconto)
  */
 
 export function parseBRNumber(value: string): number | null {
@@ -17,33 +19,21 @@ export function parseBRNumber(value: string): number | null {
 }
 
 export type AcordoCFResult = {
-  pagoExcedeAberto: boolean;
-  saldo: number | null;
-  descontoAplicado: number | null;
-  acordoComputed: number | null;
+  total: number;
+  descontoAplicado: number;
+  acordoComputed: number;
 };
 
 export function computeAcordoCF(
-  openValue: number,
   paidValue: number,
+  pendingValue: number,
   multiplier: number,
 ): AcordoCFResult {
-  const pagoExcedeAberto = paidValue > openValue;
+  const total = paidValue + pendingValue;
+  const descontoAplicado = total * multiplier;
+  const acordoComputed = pendingValue - descontoAplicado;
 
-  if (pagoExcedeAberto) {
-    return {
-      pagoExcedeAberto,
-      saldo: null,
-      descontoAplicado: null,
-      acordoComputed: null,
-    };
-  }
-
-  const saldo = openValue - paidValue;
-  const descontoAplicado = openValue * multiplier;
-  const acordoComputed = saldo - descontoAplicado;
-
-  return { pagoExcedeAberto, saldo, descontoAplicado, acordoComputed };
+  return { total, descontoAplicado, acordoComputed };
 }
 
 export function computeSimpleDiscount(

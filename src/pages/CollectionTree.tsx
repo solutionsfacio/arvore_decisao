@@ -110,7 +110,7 @@ export function CollectionTree({ editing }: { editing: boolean }) {
   const [path, setPath] = useState<string[]>([]);
   const [contractValue, setContractValue] = useState("");
   const [paidValue, setPaidValue] = useState("");
-  const [openValue, setOpenValue] = useState("");
+  const [pendingValue, setPendingValue] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -180,8 +180,8 @@ export function CollectionTree({ editing }: { editing: boolean }) {
               onContractValueChange={setContractValue}
               paidValue={paidValue}
               onPaidValueChange={setPaidValue}
-              openValue={openValue}
-              onOpenValueChange={setOpenValue}
+              pendingValue={pendingValue}
+              onPendingValueChange={setPendingValue}
             />
           ),
         )}
@@ -284,8 +284,8 @@ type ResultStepProps = {
   onContractValueChange: (v: string) => void;
   paidValue: string;
   onPaidValueChange: (v: string) => void;
-  openValue: string;
-  onOpenValueChange: (v: string) => void;
+  pendingValue: string;
+  onPendingValueChange: (v: string) => void;
 };
 
 function ResultStep({
@@ -294,21 +294,20 @@ function ResultStep({
   onContractValueChange,
   paidValue,
   onPaidValueChange,
-  openValue,
-  onOpenValueChange,
+  pendingValue,
+  onPendingValueChange,
 }: ResultStepProps) {
   const isAcordoCF = node.calcType === "acordo_cf";
 
   const numericPaid = parseBRNumber(paidValue);
-  const numericOpen = parseBRNumber(openValue);
+  const numericPending = parseBRNumber(pendingValue);
   const acordoCF =
     isAcordoCF &&
     node.multiplier !== undefined &&
     numericPaid !== null &&
-    numericOpen !== null
-      ? computeAcordoCF(numericOpen, numericPaid, node.multiplier)
+    numericPending !== null
+      ? computeAcordoCF(numericPaid, numericPending, node.multiplier)
       : null;
-  const pagoExcedeAberto = acordoCF?.pagoExcedeAberto ?? false;
   const descontoAplicado = acordoCF?.descontoAplicado ?? null;
   const acordoComputed = acordoCF?.acordoComputed ?? null;
 
@@ -370,41 +369,32 @@ function ResultStep({
               placeholder="0,00"
             />
             <CurrencyInput
-              fieldLabel="Valor em aberto"
-              value={openValue}
-              onChange={onOpenValueChange}
+              fieldLabel="Valor pendente"
+              value={pendingValue}
+              onChange={onPendingValueChange}
               placeholder="0,00"
             />
             <div className="flex flex-col gap-1 border-t border-dashed border-[var(--color-border)] pt-2">
-              {pagoExcedeAberto ? (
-                <p className="text-sm font-medium text-[var(--color-sun)]">
-                  Valor pago maior que o valor em aberto — não há acordo a
-                  ser feito.
-                </p>
-              ) : (
-                <>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
-                      Desconto aplicado
-                    </span>
-                    <span className="font-mono text-sm font-medium text-[var(--color-text)]">
-                      {descontoAplicado !== null
-                        ? brl.format(descontoAplicado)
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
-                      Valor do acordo
-                    </span>
-                    <span className="font-mono text-lg font-semibold text-[var(--color-text)]">
-                      {acordoComputed !== null
-                        ? brl.format(acordoComputed)
-                        : "—"}
-                    </span>
-                  </div>
-                </>
-              )}
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+                  Desconto aplicado
+                </span>
+                <span className="font-mono text-sm font-medium text-[var(--color-text)]">
+                  {descontoAplicado !== null
+                    ? brl.format(descontoAplicado)
+                    : "—"}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+                  Valor do acordo
+                </span>
+                <span className="font-mono text-lg font-semibold text-[var(--color-text)]">
+                  {acordoComputed !== null
+                    ? brl.format(acordoComputed)
+                    : "—"}
+                </span>
+              </div>
             </div>
           </div>
         ) : (

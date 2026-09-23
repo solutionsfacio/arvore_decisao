@@ -2,40 +2,31 @@ import { describe, expect, it } from "vitest";
 import { computeAcordoCF, computeSimpleDiscount, parseBRNumber } from "./acordoCalc";
 
 describe("computeAcordoCF", () => {
-  it("aplica o desconto sobre o valor em aberto, não sobre o saldo (caso reportado)", () => {
-    // Devia R$200, já pagou R$60, 10% de desconto → desconto de R$20 (10% de 200),
-    // saldo de R$140, acordo final de R$120. Já ocorreu de sair R$126 (10% de 140,
-    // o saldo já reduzido) — esse é o bug que este teste trava.
-    const result = computeAcordoCF(200, 60, 0.1);
+  it("aplica o desconto sobre o total (pago + pendente), não só sobre o pendente (caso reportado)", () => {
+    // Pago R$60, pendente R$140 (dívida total de R$200), 10% de desconto →
+    // desconto de R$20 (10% de 200), acordo final de R$120. Já ocorreu de
+    // sair errado quando o desconto incidia só sobre o pendente (140 × 10% = 14
+    // → acordo 126) ou quando os campos eram lidos como aberto/pago em vez de
+    // pago/pendente — esse é o cenário que este teste trava.
+    const result = computeAcordoCF(60, 140, 0.1);
 
-    expect(result.pagoExcedeAberto).toBe(false);
-    expect(result.saldo).toBe(140);
+    expect(result.total).toBe(200);
     expect(result.descontoAplicado).toBe(20);
     expect(result.acordoComputed).toBe(120);
   });
 
   it("escala corretamente para os demais percentuais cadastrados", () => {
-    expect(computeAcordoCF(1000, 0, 0.2).descontoAplicado).toBe(200);
-    expect(computeAcordoCF(1000, 0, 0.5).acordoComputed).toBe(500);
-    expect(computeAcordoCF(1000, 0, 0.7).acordoComputed).toBe(300);
+    expect(computeAcordoCF(0, 1000, 0.2).descontoAplicado).toBe(200);
+    expect(computeAcordoCF(0, 1000, 0.5).acordoComputed).toBe(500);
+    expect(computeAcordoCF(0, 1000, 0.7).acordoComputed).toBe(300);
   });
 
-  it("não gera acordo quando o valor pago excede o valor em aberto", () => {
-    const result = computeAcordoCF(100, 150, 0.1);
+  it("quando o desconto supera o valor pendente, o acordo computado fica negativo", () => {
+    const result = computeAcordoCF(180, 20, 0.5);
 
-    expect(result.pagoExcedeAberto).toBe(true);
-    expect(result.saldo).toBeNull();
-    expect(result.descontoAplicado).toBeNull();
-    expect(result.acordoComputed).toBeNull();
-  });
-
-  it("quando o valor pago é igual ao valor em aberto, saldo e acordo ficam negativos pelo desconto", () => {
-    const result = computeAcordoCF(200, 200, 0.1);
-
-    expect(result.pagoExcedeAberto).toBe(false);
-    expect(result.saldo).toBe(0);
-    expect(result.descontoAplicado).toBe(20);
-    expect(result.acordoComputed).toBe(-20);
+    expect(result.total).toBe(200);
+    expect(result.descontoAplicado).toBe(100);
+    expect(result.acordoComputed).toBe(-80);
   });
 });
 
